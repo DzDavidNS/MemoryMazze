@@ -59,8 +59,8 @@
     position: absolute;
     top: 15px; left: 15px; right: 15px; bottom: 15px;
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    grid-template-rows: repeat(6, 1fr);
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(12, 1fr);
     background: rgba(0,0,0,0.2);
     border-radius: 8px;
     box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
@@ -98,8 +98,8 @@
 
   .piece {
     position: absolute;
-    width: 12.5%; height: 8.333%; /* Half size of cell */
-    margin-left: 6.25%; margin-top: 4.166%; /* Centered in cell */
+    width: 6.25%; height: 4.166%; /* Half size of cell */
+    margin-left: 3.125%; margin-top: 2.083%; /* Centered in cell */
     display: flex; justify-content: center; align-items: center;
     transition: left 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), top 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     z-index: 10;
@@ -230,11 +230,11 @@
   }
   #editor-ui h2 { margin-top: 0; text-align: center; color: var(--wall-color); font-family: 'Cinzel'; }
   .ed-grid {
-    display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(6, 1fr);
+    display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(12, 1fr);
     width: 300px; height: 450px; margin: 0 auto; background: #111; border: 4px solid #333; gap: 0; position: relative;
   }
   .ed-cell {
-    border: 1px dashed #444; position: relative; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 10px; color: #888;
+    border: 1px dashed #444; position: relative; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 8px; font-weight: bold; color: #aaa; text-align: center;
   }
   .ed-wall-h { position: absolute; left: 0; right: 0; bottom: -6px; height: 12px; background: transparent; z-index: 10; cursor: pointer; }
   .ed-wall-v { position: absolute; top: 0; bottom: 0; right: -6px; width: 12px; background: transparent; z-index: 10; cursor: pointer; }
@@ -310,12 +310,21 @@
     diamond: '<svg viewBox="0 0 24 24"><path d="M12 2l8 10-8 10-8-10z"/></svg>'
   };
 
-  const COLS = 4; const ROWS = 6;
+  const COLS = 8; const ROWS = 12;
   const mazeEl = document.getElementById('maze');
   
   // Game State
   // Make these global and mutable by the editor
-  window.gameConfig = {"hWalls":[[false,true,false,false],[false,false,true,false],[true,false,false,true],[false,false,false,false],[false,false,true,false]],"vWalls":[[true,false,true],[false,true,false],[false,false,false],[true,false,true],[false,true,false],[false,false,true]],"pieces":{"p1":{"x":3,"y":5,"tx":3,"ty":5,"color":"var(--p1)","shape":"circle"},"p2":{"x":3,"y":0,"tx":0,"ty":5,"color":"var(--p2)","shape":"square"},"p3":{"x":1,"y":2,"tx":3,"ty":0,"color":"var(--p3)","shape":"triangle"},"p4":{"x":3,"y":3,"tx":0,"ty":0,"color":"var(--p4)","shape":"diamond"}}};
+  window.gameConfig = {
+    hWalls: Array.from({length: 11}, () => Array(8).fill(false)),
+    vWalls: Array.from({length: 12}, () => Array(7).fill(false)),
+    pieces: {
+      p1: { x: 0, y: 0, tx: 7, ty: 11, color: 'var(--p1)', shape: 'circle' },
+      p2: { x: 7, y: 0, tx: 0, ty: 11, color: 'var(--p2)', shape: 'square' },
+      p3: { x: 0, y: 11, tx: 7, ty: 0, color: 'var(--p3)', shape: 'triangle' },
+      p4: { x: 7, y: 11, tx: 0, ty: 0, color: 'var(--p4)', shape: 'diamond' }
+    }
+  };
 
   let activePiece = 'p1';
   let sequences = { p1: [], p2: [], p3: [], p4: [] };
@@ -510,8 +519,8 @@
         
         let label = [];
         for (let p in pieces) {
-          if (pieces[p].x === x && pieces[p].y === y) label.push(`${p.toUpperCase()} Start`);
-          if (pieces[p].tx === x && pieces[p].ty === y) label.push(`${p.toUpperCase()} Target`);
+          if (pieces[p].x === x && pieces[p].y === y) label.push(`${p.toUpperCase()} S`);
+          if (pieces[p].tx === x && pieces[p].ty === y) label.push(`${p.toUpperCase()} T`);
         }
         cell.innerText = label.join('\n');
         

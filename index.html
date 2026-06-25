@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html><html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Mystic Labyrinth</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;600&display=swap');
+
+  :root {
+    --bg-color: #0b0c10;
+    --maze-bg: #1f2833;
+    --wall-color: #c5a880; /* Gold/Bronze */
+    --cover-bg: linear-gradient(145deg, #2a2d34, #1a1c23);
+    --border-color: #45a29e;
+    --p1: #ff4b4b; /* Ruby */
+    --p2: #4da8da; /* Sapphire */
+    --p3: #4caf50; /* Emerald */
+    --p4: #ffc107; /* Topaz */
+  }
+
+  * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+  
+  body {
+    margin: 0; padding: 0;
+    background-color: var(--bg-color);
+    background-image: radial-gradient(circle at center, #1f2833 0%, #0b0c10 100%);
+    color: white;
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  #app-title {
+    position: absolute;
+    top: 2vh;
+    font-family: 'Cinzel', serif;
+    font-size: 24px;
+    color: var(--wall-color);
+    text-shadow: 0 0 10px rgba(197, 168, 128, 0.5);
+    letter-spacing: 2px;
+  }
+
+  /* GAME CONTAINER */
+  #game-container {
+    position: relative;
+    width: 90vw; max-width: 400px;
+    height: 135vw; max-height: 600px;
+    border-radius: 16px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 0 4px #111, 0 0 0 6px var(--wall-color);
+    background: var(--maze-bg);
+    overflow: hidden;
+  }
+
+  /* MAZE */
+  #maze {
+    position: absolute;
+    top: 15px; left: 15px; right: 15px; bottom: 15px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(6, 1fr);
+    background: rgba(0,0,0,0.2);
+    border-radius: 8px;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+  }
+
+  .cell {
+    position: relative;
+    border: 1px solid rgba(197, 168, 128, 0.05);
+  }
+
+  .wall-top { border-top: 4px solid var(--wall-color) !important; box-shadow: 0 -2px 5px rgba(197,168,128,0.3); }
+  .wall-right { border-right: 4px solid var(--wall-color) !important; box-shadow: 2px 0 5px rgba(197,168,128,0.3); }
+  .wall-bottom { border-bottom: 4px solid var(--wall-color) !important; box-shadow: 0 2px 5px rgba(197,168,128,0.3); }
+  .wall-left { border-left: 4px solid var(--wall-color) !important; box-shadow: -2px 0 5px rgba(197,168,128,0.3); }
+
+  /* PIECES & TARGETS (Half size) */
+  .target {
+    position: absolute;
+    width: 36%; height: 36%; /* Reduced size */
+    top: 32%; left: 32%;
+    opacity: 0.8;
+    display: flex; justify-content: center; align-items: center;
+    animation: pulse-target 2s infinite alternate;
+  }
+  @keyframes pulse-target {
+    0% { transform: scale(0.9); opacity: 0.6; }
+    100% { transform: scale(1.1); opacity: 1; }
+  }
+  .target svg { width: 100%; height: 100%; filter: drop-shadow(0 0 5px currentColor); }
+
+  .target.p1 { color: var(--p1); }
+  .target.p2 { color: var(--p2); }
+  .target.p3 { color: var(--p3); }
+  .target.p4 { color: var(--p4); }
+
+  .piece {
+    position: absolute;
+    width: 12.5%; height: 8.333%; /* Half size of cell */
+    margin-left: 6.25%; margin-top: 4.166%; /* Centered in cell */
+    display: flex; justify-content: center; align-items: center;
+    transition: left 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), top 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 10;
+  }
+  .piece-inner {
+    width: 100%; height: 100%;
+    border-radius: 50%;
+    box-shadow: inset -3px -3px 8px rgba(0,0,0,0.6), inset 3px 3px 8px rgba(255,255,255,0.4), 0 5px 10px rgba(0,0,0,0.7);
+    display: flex; justify-content: center; align-items: center;
+  }
+  .piece-inner svg { width: 50%; height: 50%; fill: white; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5)); }
+
+  .piece.p1 .piece-inner { background: radial-gradient(circle at 30% 30%, #ff8a8a, var(--p1) 70%, #8b0000); }
+  .piece.p2 .piece-inner { background: radial-gradient(circle at 30% 30%, #8adeff, var(--p2) 70%, #00008b); }
+  .piece.p3 .piece-inner { background: radial-gradient(circle at 30% 30%, #8aff8e, var(--p3) 70%, #006400); }
+  .piece.p4 .piece-inner { background: radial-gradient(circle at 30% 30%, #ffe68a, var(--p4) 70%, #b8860b); }
+
+  /* COVER */
+  #cover {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: var(--cover-bg);
+    z-index: 20;
+    transition: transform 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+    display: flex; flex-direction: column; align-items: center;
+    box-shadow: inset 0 0 40px rgba(0,0,0,0.9);
+    border: 2px solid #3a3f4a; border-radius: 12px;
+  }
+  #cover.hidden { transform: translateY(-102%); }
+
+  /* COVER UI */
+  .corner-btn {
+    position: absolute; width: 36px; height: 36px; border-radius: 6px;
+    transform: rotate(45deg); cursor: pointer;
+    box-shadow: inset 0 0 8px rgba(255,255,255,0.4), 0 5px 15px rgba(0,0,0,0.8);
+    border: 2px solid rgba(255,255,255,0.2);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  .corner-btn.active {
+    border-color: white; box-shadow: inset 0 0 15px white, 0 0 25px currentColor;
+    transform: rotate(45deg) scale(1.2); z-index: 2;
+  }
+  #btn-p1 { top: 25px; left: 25px; background: radial-gradient(circle, #ff8a8a, var(--p1)); color: var(--p1); }
+  #btn-p2 { top: 25px; right: 25px; background: radial-gradient(circle, #8adeff, var(--p2)); color: var(--p2); }
+  #btn-p3 { bottom: 25px; left: 25px; background: radial-gradient(circle, #8aff8e, var(--p3)); color: var(--p3); }
+  #btn-p4 { bottom: 25px; right: 25px; background: radial-gradient(circle, #ffe68a, var(--p4)); color: var(--p4); }
+
+  #sequence-display {
+    margin-top: 60px; width: 220px; height: 50px;
+    background: #0f1115; border-radius: 8px;
+    display: flex; align-items: center; padding: 0 10px;
+    overflow-x: auto; border: 2px solid #2a2d34;
+    box-shadow: inset 0 4px 10px rgba(0,0,0,0.8), 0 2px 5px rgba(255,255,255,0.05);
+    scrollbar-width: none; scroll-behavior: smooth;
+  }
+  #sequence-display::-webkit-scrollbar { display: none; }
+
+  .seq-arrow {
+    display: inline-block; flex-shrink: 0; width: 24px; height: 24px;
+    margin-right: 6px; background-size: contain; background-repeat: no-repeat;
+    background-position: center; filter: drop-shadow(0 2px 3px black);
+    opacity: 0; animation: fadeIn 0.2s forwards;
+  }
+  @keyframes fadeIn { to { opacity: 1; } }
+  .seq-arrow.up { background-image: url('data:image/svg+xml;utf8,<svg fill="%23c5a880" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 4l-8 8h6v8h4v-8h6z"/></svg>'); }
+  .seq-arrow.down { background-image: url('data:image/svg+xml;utf8,<svg fill="%23c5a880" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 20l8-8h-6V4h-4v8H4z"/></svg>'); }
+  .seq-arrow.left { background-image: url('data:image/svg+xml;utf8,<svg fill="%23c5a880" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 12l8 8v-6h8v-4h-8V4z"/></svg>'); }
+  .seq-arrow.right { background-image: url('data:image/svg+xml;utf8,<svg fill="%23c5a880" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 12l-8-8v6H4v4h8v6z"/></svg>'); }
+
+  #dpad { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 210px; height: 210px; }
+  .d-btn {
+    position: absolute; width: 64px; height: 64px;
+    background: linear-gradient(145deg, #383c47, #24262d);
+    border: 2px solid #4a4f5c; border-radius: 12px;
+    display: flex; justify-content: center; align-items: center;
+    cursor: pointer; box-shadow: 0 6px 0 #15161a, 0 10px 20px rgba(0,0,0,0.6);
+    transition: all 0.1s; color: var(--wall-color);
+  }
+  .d-btn:active { transform: translateY(6px); box-shadow: 0 0 0 #15161a, 0 4px 10px rgba(0,0,0,0.6); }
+  .d-btn svg { width: 32px; height: 32px; fill: currentColor; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.8)); }
+  #btn-up { top: 0; left: 73px; }
+  #btn-down { bottom: 0; left: 73px; }
+  #btn-left { top: 73px; left: 0; }
+  #btn-right { top: 73px; right: 0; }
+  
+  #btn-enter {
+    position: absolute; top: 68px; left: 68px; width: 74px; height: 74px;
+    background: radial-gradient(circle at 30% 30%, #444, #111);
+    border-radius: 50%; border: 4px solid #2a2d34; cursor: pointer;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.8), 0 0 15px rgba(0,0,0,0.5);
+    transition: transform 0.2s, background 0.4s; display: flex; justify-content: center; align-items: center;
+  }
+  #btn-enter::after {
+    content: ''; width: 30px; height: 30px; border-radius: 50%;
+    background: radial-gradient(circle, var(--p1), #8b0000); box-shadow: 0 0 10px var(--p1);
+    transition: background 0.4s, box-shadow 0.4s; opacity: 0.8;
+  }
+  #btn-enter:active { transform: scale(0.9); }
+
+  .util-btn {
+    position: absolute; padding: 8px 16px; background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; color: #ccc;
+    font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600;
+    letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: all 0.2s;
+  }
+  .util-btn:active { transform: scale(0.95); background: rgba(255,255,255,0.1); }
+  #btn-undo { bottom: 85px; left: 50%; transform: translateX(-50%); }
+  #btn-toggle-cover { bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(197, 168, 128, 0.1); border-color: rgba(197, 168, 128, 0.4); color: var(--wall-color); }
+
+  #btn-hide-maze {
+    position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+    padding: 12px 24px; background: rgba(0,0,0,0.8); border: 1px solid var(--wall-color);
+    border-radius: 24px; color: var(--wall-color); font-family: 'Cinzel', serif;
+    font-weight: 700; font-size: 14px; z-index: 5; cursor: pointer; display: none;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+  }
+
+  #btn-edit-mode {
+    position: absolute; top: 10px; right: 10px; z-index: 100;
+    padding: 6px 12px; background: rgba(255,255,255,0.1); border: 1px solid #fff;
+    border-radius: 8px; color: white; cursor: pointer; font-size: 12px;
+  }
+
+  /* EDITOR MODE UI */
+  #editor-ui {
+    display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: var(--bg-color); z-index: 200; overflow-y: auto; padding: 20px;
+  }
+  #editor-ui h2 { margin-top: 0; text-align: center; color: var(--wall-color); font-family: 'Cinzel'; }
+  .ed-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(6, 1fr);
+    width: 300px; height: 450px; margin: 0 auto; background: #111; border: 4px solid #333; gap: 0; position: relative;
+  }
+  .ed-cell {
+    border: 1px dashed #444; position: relative; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 10px; color: #888;
+  }
+  .ed-wall-h { position: absolute; left: 0; right: 0; bottom: -6px; height: 12px; background: transparent; z-index: 10; cursor: pointer; }
+  .ed-wall-v { position: absolute; top: 0; bottom: 0; right: -6px; width: 12px; background: transparent; z-index: 10; cursor: pointer; }
+  .ed-wall-h:hover, .ed-wall-v:hover { background: rgba(255, 255, 0, 0.3); }
+  .ed-wall-h.active { background: var(--wall-color); height: 4px; bottom: -2px; }
+  .ed-wall-v.active { background: var(--wall-color); width: 4px; right: -2px; }
+  
+  .ed-toolbar { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 20px; }
+  .ed-tool { padding: 8px 12px; border: 2px solid #555; background: #222; color: white; cursor: pointer; border-radius: 6px; }
+  .ed-tool.active { border-color: var(--wall-color); background: #333; }
+  
+  .ed-actions { display: flex; justify-content: center; gap: 15px; margin-top: 30px; }
+  .ed-btn { padding: 10px 20px; background: var(--wall-color); color: #000; font-weight: bold; cursor: pointer; border: none; border-radius: 8px; }
+
+</style>
+<style id="dynamic-style">#btn-enter::after { background: radial-gradient(circle, var(--p1), #222); box-shadow: 0 0 10px var(--p1); }</style></head>
+<body>
+
+<div id="btn-edit-mode" onclick="toggleEditor()">Level Editor</div>
+<div id="app-title">Memory Labyrinth</div>
+
+<!-- GAME UI -->
+<div id="game-container" style="display: block;">
+  <div id="maze"><div class="cell wall-top wall-left wall-right"><div class="target p4"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg></div></div><div class="cell wall-top wall-bottom"></div><div class="cell wall-top wall-right"></div><div class="cell wall-top wall-right"><div class="target p3"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg></div></div><div class="cell wall-left"></div><div class="cell wall-right"></div><div class="cell wall-bottom"></div><div class="cell wall-right"></div><div class="cell wall-left wall-bottom"></div><div class="cell"></div><div class="cell"></div><div class="cell wall-right wall-bottom"></div><div class="cell wall-left wall-right"></div><div class="cell"></div><div class="cell wall-right"></div><div class="cell wall-right"></div><div class="cell wall-left"></div><div class="cell wall-right"></div><div class="cell wall-bottom"></div><div class="cell wall-right"></div><div class="cell wall-bottom wall-left"><div class="target p2"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg></div></div><div class="cell wall-bottom"></div><div class="cell wall-bottom wall-right"></div><div class="cell wall-bottom wall-right"><div class="target p1"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg></div></div><div class="piece p1" id="piece-p1" style="left: 75%; top: 83.3333%;"><div class="piece-inner"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle></svg></div></div><div class="piece p2" id="piece-p2" style="left: 75%; top: 0%;"><div class="piece-inner"><svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14"></rect></svg></div></div><div class="piece p3" id="piece-p3" style="left: 25%; top: 33.3333%;"><div class="piece-inner"><svg viewBox="0 0 24 24"><path d="M12 4l8 14H4z"></path></svg></div></div><div class="piece p4" id="piece-p4" style="left: 75%; top: 50%;"><div class="piece-inner"><svg viewBox="0 0 24 24"><path d="M12 2l8 10-8 10-8-10z"></path></svg></div></div></div>
+  <div id="cover" class="hidden">
+    <div id="btn-p1" class="corner-btn active" onclick="selectPiece('p1')"></div>
+    <div id="btn-p2" class="corner-btn" onclick="selectPiece('p2')"></div>
+    <div id="btn-p3" class="corner-btn" onclick="selectPiece('p3')"></div>
+    <div id="btn-p4" class="corner-btn" onclick="selectPiece('p4')"></div>
+    <div id="sequence-display"></div>
+    <div id="dpad">
+      <div id="btn-up" class="d-btn" onclick="addMove('up')"><svg viewBox="0 0 24 24"><path d="M12 4l-8 8h6v8h4v-8h6z"></path></svg></div>
+      <div id="btn-down" class="d-btn" onclick="addMove('down')"><svg viewBox="0 0 24 24"><path d="M12 20l8-8h-6V4h-4v8H4z"></path></svg></div>
+      <div id="btn-left" class="d-btn" onclick="addMove('left')"><svg viewBox="0 0 24 24"><path d="M4 12l8 8v-6h8v-4h-8V4z"></path></svg></div>
+      <div id="btn-right" class="d-btn" onclick="addMove('right')"><svg viewBox="0 0 24 24"><path d="M20 12l-8-8v6H4v4h8v6z"></path></svg></div>
+      <div id="btn-enter" onclick="executeMoves()"></div>
+    </div>
+    <button id="btn-undo" class="util-btn" onclick="undoMove()">Undo Move</button>
+    <button id="btn-toggle-cover" class="util-btn" onclick="toggleCover()">Peek Maze</button>
+  </div>
+  <button id="btn-hide-maze" onclick="toggleCover()" style="display: block;">Close Maze</button>
+</div>
+
+<!-- EDITOR UI -->
+<div id="editor-ui" style="display: none;">
+  <h2>Level Editor</h2>
+  <div class="ed-grid" id="ed-grid"><div class="ed-cell" data-x="0" data-y="0">P4 Target<div class="ed-wall-h"></div><div class="ed-wall-v active"></div></div><div class="ed-cell" data-x="1" data-y="0"><div class="ed-wall-h active"></div><div class="ed-wall-v"></div></div><div class="ed-cell" data-x="2" data-y="0"><div class="ed-wall-h"></div><div class="ed-wall-v active"></div></div><div class="ed-cell" data-x="3" data-y="0">P2 Start<br>P3 Target<div class="ed-wall-h"></div></div><div class="ed-cell" data-x="0" data-y="1"><div class="ed-wall-h"></div><div class="ed-wall-v"></div></div><div class="ed-cell" data-x="1" data-y="1"><div class="ed-wall-h"></div><div class="ed-wall-v active"></div></div><div class="ed-cell" data-x="2" data-y="1"><div class="ed-wall-h active"></div><div class="ed-wall-v"></div></div><div class="ed-cell" data-x="3" data-y="1"><div class="ed-wall-h"></div></div><div class="ed-cell" data-x="0" data-y="2"><div class="ed-wall-h active"></div><div class="ed-wall-v"></div></div><div class="ed-cell" data-x="1" data-y="2">P3 Start<div class="ed-wall-h"></div><div class="ed-wall-v"></div></div><div class="ed-cell" data-x="2" data-y="2"><div class="ed-wall-h"></div><div class="ed-wall-v"></div></div><div class="ed-cell" data-x="3" data-y="2"><div class="ed-wall-h active"></div></div><div class="ed-cell" data-x="0" data-y="3"><div class="ed-wall-h"></div><div class="ed-wall-v active"></div></div><div class="ed-cell" data-x="1" data-y="3"><div class="ed-wall-h"></div><div class="ed-wall-v"></div></div><div class="ed-cell" data-x="2" data-y="3"><div class="ed-wall-h"></div><div class="ed-wall-v active"></div></div><div class="ed-cell" data-x="3" data-y="3">P4 Start<div class="ed-wall-h"></div></div><div class="ed-cell" data-x="0" data-y="4"><div class="ed-wall-h"></div><div class="ed-wall-v"></div></div><div class="ed-cell" data-x="1" data-y="4"><div class="ed-wall-h"></div><div class="ed-wall-v active"></div></div><div class="ed-cell" data-x="2" data-y="4"><div class="ed-wall-h active"></div><div class="ed-wall-v"></div></div><div class="ed-cell" data-x="3" data-y="4"><div class="ed-wall-h"></div></div><div class="ed-cell" data-x="0" data-y="5">P2 Target<div class="ed-wall-v"></div></div><div class="ed-cell" data-x="1" data-y="5"><div class="ed-wall-v"></div></div><div class="ed-cell" data-x="2" data-y="5"><div class="ed-wall-v active"></div></div><div class="ed-cell" data-x="3" data-y="5">P1 Start<br>P1 Target</div></div>
+  <div class="ed-toolbar" id="ed-toolbar">
+    <button class="ed-tool active" data-tool="wall">Toggle Walls</button>
+    <button class="ed-tool" data-tool="p1-start" style="color: var(--p1)">P1 Start</button>
+    <button class="ed-tool" data-tool="p1-target" style="color: var(--p1)">P1 Target</button>
+    <button class="ed-tool" data-tool="p2-start" style="color: var(--p2)">P2 Start</button>
+    <button class="ed-tool" data-tool="p2-target" style="color: var(--p2)">P2 Target</button>
+    <button class="ed-tool" data-tool="p3-start" style="color: var(--p3)">P3 Start</button>
+    <button class="ed-tool" data-tool="p3-target" style="color: var(--p3)">P3 Target</button>
+    <button class="ed-tool" data-tool="p4-start" style="color: var(--p4)">P4 Start</button>
+    <button class="ed-tool" data-tool="p4-target" style="color: var(--p4)">P4 Target</button>
+  </div>
+  <div class="ed-actions">
+    <button class="ed-btn" onclick="applyEditorAndPlay()">Play Test</button>
+    <button class="ed-btn" onclick="exportHTML(true)">Save With Editor</button>
+    <button class="ed-btn" onclick="exportHTML(false)">Save Game Only</button>
+  </div>
+</div>
+
+<script>
+  // SVG Shapes
+  const SVGS = {
+    star: '<svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>',
+    circle: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>',
+    square: '<svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14"/></svg>',
+    triangle: '<svg viewBox="0 0 24 24"><path d="M12 4l8 14H4z"/></svg>',
+    diamond: '<svg viewBox="0 0 24 24"><path d="M12 2l8 10-8 10-8-10z"/></svg>'
+  };
+
+  const COLS = 4; const ROWS = 6;
+  const mazeEl = document.getElementById('maze');
+  
+  // Game State
+  // Make these global and mutable by the editor
+  window.gameConfig = {"hWalls":[[false,true,false,false],[false,false,true,false],[true,false,false,true],[false,false,false,false],[false,false,true,false]],"vWalls":[[true,false,true],[false,true,false],[false,false,false],[true,false,true],[false,true,false],[false,false,true]],"pieces":{"p1":{"x":3,"y":5,"tx":3,"ty":5,"color":"var(--p1)","shape":"circle"},"p2":{"x":3,"y":0,"tx":0,"ty":5,"color":"var(--p2)","shape":"square"},"p3":{"x":1,"y":2,"tx":3,"ty":0,"color":"var(--p3)","shape":"triangle"},"p4":{"x":3,"y":3,"tx":0,"ty":0,"color":"var(--p4)","shape":"diamond"}}};
+
+  let activePiece = 'p1';
+  let sequences = { p1: [], p2: [], p3: [], p4: [] };
+  let isPlaying = false;
+
+  function initMaze() {
+    mazeEl.innerHTML = '';
+    const { hWalls, vWalls, pieces } = window.gameConfig;
+    
+    for (let y = 0; y < ROWS; y++) {
+      for (let x = 0; x < COLS; x++) {
+        let cell = document.createElement('div');
+        cell.className = 'cell';
+        if (y === 0) cell.classList.add('wall-top');
+        if (y === ROWS - 1) cell.classList.add('wall-bottom');
+        if (x === 0) cell.classList.add('wall-left');
+        if (x === COLS - 1) cell.classList.add('wall-right');
+        if (y < ROWS - 1 && hWalls[y][x]) cell.classList.add('wall-bottom');
+        if (x < COLS - 1 && vWalls[y][x]) cell.classList.add('wall-right');
+        mazeEl.appendChild(cell);
+      }
+    }
+
+    // Targets
+    for (let p in pieces) {
+      let t = document.createElement('div');
+      t.className = `target ${p}`;
+      t.innerHTML = SVGS.star;
+      mazeEl.children[pieces[p].ty * COLS + pieces[p].tx].appendChild(t);
+    }
+
+    // Pieces
+    for (let p in pieces) {
+      let el = document.createElement('div');
+      el.className = `piece ${p}`;
+      el.id = `piece-${p}`;
+      el.innerHTML = `<div class="piece-inner">${SVGS[pieces[p].shape]}</div>`;
+      mazeEl.appendChild(el);
+      updatePiecePosition(p);
+    }
+  }
+
+  function updatePiecePosition(p) {
+    let el = document.getElementById(`piece-${p}`);
+    let x = window.gameConfig.pieces[p].x;
+    let y = window.gameConfig.pieces[p].y;
+    el.style.left = `${x * 25}%`;
+    el.style.top = `${y * (100/6)}%`;
+  }
+
+  const moves = { up: { dx: 0, dy: -1 }, down: { dx: 0, dy: 1 }, left: { dx: -1, dy: 0 }, right: { dx: 1, dy: 0 } };
+
+  function canMove(x, y, dir) {
+    const { hWalls, vWalls } = window.gameConfig;
+    if (dir === 'up') { if (y === 0) return false; return !hWalls[y-1][x]; }
+    if (dir === 'down') { if (y === ROWS - 1) return false; return !hWalls[y][x]; }
+    if (dir === 'left') { if (x === 0) return false; return !vWalls[y][x-1]; }
+    if (dir === 'right') { if (x === COLS - 1) return false; return !vWalls[y][x]; }
+    return false;
+  }
+
+  function addMove(dir) {
+    if (isPlaying) return;
+    if (sequences[activePiece].length >= 20) return;
+    sequences[activePiece].push(dir);
+    renderSequence();
+  }
+
+  function undoMove() {
+    if (isPlaying || sequences[activePiece].length === 0) return;
+    sequences[activePiece].pop();
+    renderSequence();
+  }
+
+  function renderSequence() {
+    const disp = document.getElementById('sequence-display');
+    disp.innerHTML = '';
+    sequences[activePiece].forEach(dir => {
+      let div = document.createElement('div');
+      div.className = `seq-arrow ${dir}`;
+      disp.appendChild(div);
+    });
+    disp.scrollLeft = disp.scrollWidth;
+  }
+
+  function selectPiece(pId) {
+    if (isPlaying) return;
+    activePiece = pId;
+    document.querySelectorAll('.corner-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(`btn-${pId}`).classList.add('active');
+    
+    const color = window.gameConfig.pieces[pId].color;
+    let styleSheet = document.getElementById('dynamic-style');
+    if (!styleSheet) {
+      styleSheet = document.createElement("style");
+      styleSheet.id = 'dynamic-style';
+      document.head.appendChild(styleSheet);
+    }
+    styleSheet.innerText = `#btn-enter::after { background: radial-gradient(circle, ${color}, #222); box-shadow: 0 0 10px ${color}; }`;
+    renderSequence();
+  }
+
+  async function executeMoves() {
+    if (isPlaying || sequences[activePiece].length === 0) return;
+    isPlaying = true;
+    
+    document.getElementById('cover').classList.add('hidden');
+    document.getElementById('btn-hide-maze').style.display = 'block';
+
+    let seq = [...sequences[activePiece]];
+    let p = window.gameConfig.pieces[activePiece];
+
+    await new Promise(r => setTimeout(r, 600));
+
+    for (let i = 0; i < seq.length; i++) {
+      let dir = seq[i];
+      await new Promise(r => setTimeout(r, 400));
+      
+      if (canMove(p.x, p.y, dir)) {
+        p.x += moves[dir].dx;
+        p.y += moves[dir].dy;
+        updatePiecePosition(activePiece);
+      } else {
+        let el = document.getElementById(`piece-${activePiece}`);
+        el.style.transform = 'translate(4px, 4px)';
+        setTimeout(() => el.style.transform = 'translate(0, 0)', 150);
+        break;
+      }
+    }
+    
+    sequences[activePiece] = [];
+    renderSequence();
+    isPlaying = false;
+    checkWin();
+  }
+
+  function toggleCover() {
+    if (isPlaying) return;
+    const cover = document.getElementById('cover');
+    const hideBtn = document.getElementById('btn-hide-maze');
+    if (cover.classList.contains('hidden')) {
+      cover.classList.remove('hidden');
+      hideBtn.style.display = 'none';
+    } else {
+      cover.classList.add('hidden');
+      hideBtn.style.display = 'block';
+    }
+  }
+
+  function checkWin() {
+    let won = true;
+    for (let key in window.gameConfig.pieces) {
+      let p = window.gameConfig.pieces[key];
+      if (p.x !== p.tx || p.y !== p.ty) { won = false; break; }
+    }
+    if (won) setTimeout(() => alert("Magnificent! You have solved the Labyrinth!"), 600);
+  }
+
+  // --- EDITOR LOGIC ---
+  let currentTool = 'wall';
+  
+  function toggleEditor() {
+    const ed = document.getElementById('editor-ui');
+    if (ed.style.display === 'block') {
+      ed.style.display = 'none';
+      document.getElementById('game-container').style.display = 'block';
+    } else {
+      ed.style.display = 'block';
+      document.getElementById('game-container').style.display = 'none';
+      renderEditorGrid();
+    }
+  }
+
+  document.querySelectorAll('.ed-tool').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      document.querySelectorAll('.ed-tool').forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+      currentTool = e.target.getAttribute('data-tool');
+    });
+  });
+
+  function renderEditorGrid() {
+    const grid = document.getElementById('ed-grid');
+    grid.innerHTML = '';
+    const { hWalls, vWalls, pieces } = window.gameConfig;
+    
+    for (let y = 0; y < ROWS; y++) {
+      for (let x = 0; x < COLS; x++) {
+        let cell = document.createElement('div');
+        cell.className = 'ed-cell';
+        cell.dataset.x = x; cell.dataset.y = y;
+        
+        let label = [];
+        for (let p in pieces) {
+          if (pieces[p].x === x && pieces[p].y === y) label.push(`${p.toUpperCase()} Start`);
+          if (pieces[p].tx === x && pieces[p].ty === y) label.push(`${p.toUpperCase()} Target`);
+        }
+        cell.innerText = label.join('\n');
+        
+        cell.addEventListener('click', () => handleCellClick(x, y));
+
+        if (y < ROWS - 1) {
+          let hBtn = document.createElement('div');
+          hBtn.className = 'ed-wall-h' + (hWalls[y][x] ? ' active' : '');
+          hBtn.addEventListener('click', (e) => { e.stopPropagation(); if (currentTool==='wall') toggleWall('h', x, y, hBtn); });
+          cell.appendChild(hBtn);
+        }
+        if (x < COLS - 1) {
+          let vBtn = document.createElement('div');
+          vBtn.className = 'ed-wall-v' + (vWalls[y][x] ? ' active' : '');
+          vBtn.addEventListener('click', (e) => { e.stopPropagation(); if (currentTool==='wall') toggleWall('v', x, y, vBtn); });
+          cell.appendChild(vBtn);
+        }
+        grid.appendChild(cell);
+      }
+    }
+  }
+
+  function toggleWall(type, x, y, el) {
+    if (type === 'h') {
+      window.gameConfig.hWalls[y][x] = !window.gameConfig.hWalls[y][x];
+      el.classList.toggle('active', window.gameConfig.hWalls[y][x]);
+    } else {
+      window.gameConfig.vWalls[y][x] = !window.gameConfig.vWalls[y][x];
+      el.classList.toggle('active', window.gameConfig.vWalls[y][x]);
+    }
+  }
+
+  function handleCellClick(x, y) {
+    if (currentTool === 'wall') return;
+    let parts = currentTool.split('-'); // e.g., p1-start
+    let p = parts[0];
+    let type = parts[1];
+    if (type === 'start') {
+      window.gameConfig.pieces[p].x = x;
+      window.gameConfig.pieces[p].y = y;
+    } else if (type === 'target') {
+      window.gameConfig.pieces[p].tx = x;
+      window.gameConfig.pieces[p].ty = y;
+    }
+    renderEditorGrid();
+  }
+
+  function applyEditorAndPlay() {
+    toggleEditor();
+    // reset sequences
+    sequences = { p1: [], p2: [], p3: [], p4: [] };
+    initMaze();
+    selectPiece('p1');
+  }
+
+  function exportHTML(withEditor) {
+    applyEditorAndPlay(); // ensure DOM is updated to current state
+    
+    // Create a copy of the current document string
+    let html = document.documentElement.outerHTML;
+    
+    // Update the inline window.gameConfig string in the HTML so it saves the current custom state!
+    let configStr = JSON.stringify(window.gameConfig);
+    html = html.replace(/window\.gameConfig\s*=\s*\{[\s\S]*?pieces:\s*\{[\s\S]*?\}\s*\};/, `window.gameConfig = ${configStr};`);
+
+    if (!withEditor) {
+      // Remove editor related UI and button
+      html = html.replace(/<div id="editor-ui"[\s\S]*?<\/div>\s*(?=<script>)/, '');
+      html = html.replace(/<div id="btn-edit-mode"[\s\S]*?<\/div>/, '');
+      // Strip editor logic comments to end of script if possible, but it's okay to leave dead functions.
+    }
+    
+    let blob = new Blob(["<!DOCTYPE html>\n<html>" + html + "</html>"], { type: "text/html" });
+    let a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = withEditor ? 'maze-with-editor.html' : 'maze-standalone.html';
+    a.click();
+  }
+
+  // Startup
+  initMaze();
+  selectPiece('p1');
+
+</script>
+
+
+</body></html></html>

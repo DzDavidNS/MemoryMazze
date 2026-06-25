@@ -82,7 +82,9 @@
     width: 36%; height: 36%; /* Reduced size */
     top: 32%; left: 32%;
     opacity: 0.8;
-    display: flex; justify-content: center; align-items: center;
+    background-color: currentColor;
+    box-shadow: 0 0 10px currentColor;
+    border-radius: 2px;
     animation: pulse-target 2s infinite alternate;
   }
   @keyframes pulse-target {
@@ -108,9 +110,7 @@
     width: 100%; height: 100%;
     border-radius: 50%;
     box-shadow: inset -3px -3px 8px rgba(0,0,0,0.6), inset 3px 3px 8px rgba(255,255,255,0.4), 0 5px 10px rgba(0,0,0,0.7);
-    display: flex; justify-content: center; align-items: center;
   }
-  .piece-inner svg { width: 50%; height: 50%; fill: white; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5)); }
 
   .piece.p1 .piece-inner { background: radial-gradient(circle at 30% 30%, #ff8a8a, var(--p1) 70%, #8b0000); }
   .piece.p2 .piece-inner { background: radial-gradient(circle at 30% 30%, #8adeff, var(--p2) 70%, #00008b); }
@@ -191,31 +191,33 @@
     border-radius: 50%; border: 4px solid #2a2d34; cursor: pointer;
     box-shadow: inset 0 0 10px rgba(0,0,0,0.8), 0 0 15px rgba(0,0,0,0.5);
     transition: transform 0.2s, background 0.4s; display: flex; justify-content: center; align-items: center;
+    color: var(--p1);
   }
-  #btn-enter::after {
-    content: ''; width: 30px; height: 30px; border-radius: 50%;
-    background: radial-gradient(circle, var(--p1), #8b0000); box-shadow: 0 0 10px var(--p1);
-    transition: background 0.4s, box-shadow 0.4s; opacity: 0.8;
+  #btn-enter svg {
+    width: 36px; height: 36px; fill: currentColor;
+    filter: drop-shadow(0 0 5px currentColor);
+    margin-left: 4px; /* visually center play icon */
   }
   #btn-enter:active { transform: scale(0.9); }
 
   .util-btn {
-    position: absolute; padding: 8px 16px; background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; color: #ccc;
-    font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600;
-    letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: all 0.2s;
+    position: absolute; padding: 12px; background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.2); border-radius: 50%; color: #ccc;
+    cursor: pointer; transition: all 0.2s; display: flex; justify-content: center; align-items: center;
   }
+  .util-btn svg { width: 24px; height: 24px; fill: currentColor; }
   .util-btn:active { transform: scale(0.95); background: rgba(255,255,255,0.1); }
   #btn-undo { bottom: 85px; left: 50%; transform: translateX(-50%); }
-  #btn-toggle-cover { bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(197, 168, 128, 0.1); border-color: rgba(197, 168, 128, 0.4); color: var(--wall-color); }
+  #btn-toggle-cover { bottom: 25px; left: 50%; transform: translateX(-50%); background: rgba(197, 168, 128, 0.1); border-color: rgba(197, 168, 128, 0.4); color: var(--wall-color); }
 
   #btn-hide-maze {
-    position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
-    padding: 12px 24px; background: rgba(0,0,0,0.8); border: 1px solid var(--wall-color);
-    border-radius: 24px; color: var(--wall-color); font-family: 'Cinzel', serif;
-    font-weight: 700; font-size: 14px; z-index: 5; cursor: pointer; display: none;
+    position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%);
+    padding: 12px; background: rgba(0,0,0,0.8); border: 1px solid var(--wall-color);
+    border-radius: 50%; color: var(--wall-color); display: flex; justify-content: center; align-items: center;
+    z-index: 5; cursor: pointer; display: none;
     box-shadow: 0 4px 15px rgba(0,0,0,0.6);
   }
+  #btn-hide-maze svg { width: 24px; height: 24px; fill: currentColor; }
 
   #btn-edit-mode {
     position: absolute; top: 10px; right: 10px; z-index: 100;
@@ -250,7 +252,7 @@
   .ed-btn { padding: 10px 20px; background: var(--wall-color); color: #000; font-weight: bold; cursor: pointer; border: none; border-radius: 8px; }
 
 </style>
-<style id="dynamic-style">#btn-enter::after { background: radial-gradient(circle, var(--p1), #222); box-shadow: 0 0 10px var(--p1); }</style></head>
+<style id="dynamic-style">#btn-enter { color: var(--p1); }</style></head>
 <body>
 
 <div id="btn-edit-mode" onclick="toggleEditor()">Level Editor</div>
@@ -270,12 +272,20 @@
       <div id="btn-down" class="d-btn" onclick="addMove('down')"><svg viewBox="0 0 24 24"><path d="M12 20l8-8h-6V4h-4v8H4z"></path></svg></div>
       <div id="btn-left" class="d-btn" onclick="addMove('left')"><svg viewBox="0 0 24 24"><path d="M4 12l8 8v-6h8v-4h-8V4z"></path></svg></div>
       <div id="btn-right" class="d-btn" onclick="addMove('right')"><svg viewBox="0 0 24 24"><path d="M20 12l-8-8v6H4v4h8v6z"></path></svg></div>
-      <div id="btn-enter" onclick="executeMoves()"></div>
+      <div id="btn-enter" onclick="executeMoves()">
+        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+      </div>
     </div>
-    <button id="btn-undo" class="util-btn" onclick="undoMove()">Undo Move</button>
-    <button id="btn-toggle-cover" class="util-btn" onclick="toggleCover()">Peek Maze</button>
+    <button id="btn-undo" class="util-btn" onclick="undoMove()">
+      <svg viewBox="0 0 24 24"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>
+    </button>
+    <button id="btn-toggle-cover" class="util-btn" onclick="toggleCover()">
+      <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+    </button>
   </div>
-  <button id="btn-hide-maze" onclick="toggleCover()" style="display: block;">Close Maze</button>
+  <button id="btn-hide-maze" onclick="toggleCover()" style="display: block;">
+    <svg viewBox="0 0 24 24"><path d="M11.83 9L15 12.16V12a3 3 0 0 0-3-3h-.17zM12 4.5c4.75 0 8.87 2.76 10.74 6.88l-1.3 1.3C19.98 9.38 16.33 6.5 12 6.5c-1.28 0-2.52.23-3.67.65L7.26 6.09C8.71 5.06 10.3 4.5 12 4.5zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/></svg>
+  </button>
 </div>
 
 <!-- EDITOR UI -->
@@ -302,13 +312,7 @@
 
 <script>
   // SVG Shapes
-  const SVGS = {
-    star: '<svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>',
-    circle: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>',
-    square: '<svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14"/></svg>',
-    triangle: '<svg viewBox="0 0 24 24"><path d="M12 4l8 14H4z"/></svg>',
-    diamond: '<svg viewBox="0 0 24 24"><path d="M12 2l8 10-8 10-8-10z"/></svg>'
-  };
+  const SVGS = {};
 
   const COLS = 8; const ROWS = 12;
   const mazeEl = document.getElementById('maze');
@@ -343,7 +347,6 @@
     for (let p in pieces) {
       let t = document.createElement('div');
       t.className = `target ${p}`;
-      t.innerHTML = SVGS.star;
       mazeEl.children[pieces[p].ty * COLS + pieces[p].tx].appendChild(t);
     }
 
@@ -352,7 +355,7 @@
       let el = document.createElement('div');
       el.className = `piece ${p}`;
       el.id = `piece-${p}`;
-      el.innerHTML = `<div class="piece-inner">${SVGS[pieces[p].shape]}</div>`;
+      el.innerHTML = `<div class="piece-inner"></div>`;
       mazeEl.appendChild(el);
       updatePiecePosition(p);
     }
@@ -414,7 +417,7 @@
       styleSheet.id = 'dynamic-style';
       document.head.appendChild(styleSheet);
     }
-    styleSheet.innerText = `#btn-enter::after { background: radial-gradient(circle, ${color}, #222); box-shadow: 0 0 10px ${color}; }`;
+    styleSheet.innerText = `#btn-enter { color: ${color}; }`;
     renderSequence();
   }
 
